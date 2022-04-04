@@ -24,10 +24,10 @@
 -module(bounded_queue).
 -author('Andy Gross <andy@basho.com>').
 
--export([new/1, 
-         in/2, 
-         out/1, 
-         byte_size/1, 
+-export([new/1,
+         in/2,
+         out/1,
+         byte_size/1,
          max_size/1,
          len/1,
          dropped_count/1]).
@@ -36,11 +36,7 @@
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
--ifdef(namespaced_types).
 -type bounded_queue_queue() :: queue:queue().
--else.
--type bounded_queue_queue() :: queue().
--endif.
 
 -record(bq, {
           m=0 :: non_neg_integer(),  %% maximum size of queue, in bytes.
@@ -56,7 +52,7 @@
 -spec new(non_neg_integer()) -> bounded_queue().
 new(MaxSize) when is_integer(MaxSize) -> #bq{m=MaxSize, s=0, q=queue:new()}.
 
-%% @doc  Add an item to the queue.  
+%% @doc  Add an item to the queue.
 -spec in(bounded_queue(), bounded_queue_element()) -> bounded_queue().
 in(BQ=#bq{m=Max, q=Q, d=D}, Item) when is_binary(Item) ->
     ItemSize = element_size(Item),
@@ -74,7 +70,7 @@ in(BQ=#bq{m=Max, q=Q, d=D}, [H|_T] = Items) when is_binary(H) ->
     case ItemSize > Max of
         true ->
             DroppedObjs = queue:to_list(Q),
-            _ = [ riak_repl_util:dropped_realtime_hook(DroppedObj) 
+            _ = [ riak_repl_util:dropped_realtime_hook(DroppedObj)
              || DroppedObj <- DroppedObjs ],
             BQ#bq{q=queue:from_list([Items]),s=ItemSize,d=queue:len(Q)+D};
         false ->
@@ -106,9 +102,9 @@ len(#bq{q=Q}) -> queue:len(Q).
 %% @doc  The number of items dropped from the queue due to the size bound.
 -spec dropped_count(bounded_queue()) -> non_neg_integer().
 dropped_count(#bq{d=D}) -> D.
-    
 
-make_fit(BQ=#bq{s=Size,m=Max,d=D}, Item, ItemSize) when (ItemSize+Size>Max) -> 
+
+make_fit(BQ=#bq{s=Size,m=Max,d=D}, Item, ItemSize) when (ItemSize+Size>Max) ->
     {DroppedItem, NewQ} = out(BQ),
     riak_repl_util:dropped_realtime_hook(DroppedItem),
     make_fit(NewQ#bq{d=D+1}, Item, ItemSize);
@@ -123,7 +119,7 @@ element_size(Element) when is_binary(Element) ->
     erlang:byte_size(Element).
 
 
-   
+
 %% ===================================================================
 %% EUnit tests
 %% ===================================================================

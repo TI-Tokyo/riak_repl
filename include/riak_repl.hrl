@@ -62,11 +62,7 @@
 -type(repl_node_sites() :: {node(), [{repl_sitename(), pid()}]}).
 -type(ring() :: tuple()).
 
--ifdef(namespaced_types).
 -type riak_repl_dict() :: dict:dict().
--else.
--type riak_repl_dict() :: dict().
--endif.
 
 -type(repl_config() :: riak_repl_dict()|undefined).
 %% wire_version() is an atom that defines which wire format a binary
@@ -97,7 +93,7 @@
           my_pi           :: #peer_info{},    %% local peer_info
           client          :: tuple(),         %% riak local_client
           partitions = [] :: list(),          %% list of local partitions
-          work_dir        :: string()         %% working directory 
+          work_dir        :: string()         %% working directory
          }).
 
 -record(repl_listener, {
@@ -108,7 +104,7 @@
 -record(repl_site, {
           name  :: repl_sitename(),   %% site name
           addrs=[] :: repl_addrlist(),%% list of ip/ports to connect to
-          last_sync=?NEVER_SYNCED :: tuple()  
+          last_sync=?NEVER_SYNCED :: tuple()
          }).
 
 -record(nat_listener, {

@@ -22,10 +22,10 @@
 
 -behaviour(gen_server).
 
--compile({nowarn_deprecated_function, 
-            [{gen_fsm, send_event, 2},
-                {gen_fsm, sync_send_all_state_event, 3},
-                {gen_fsm, sync_send_all_state_event, 2}]}).
+-compile({nowarn_deprecated_function,
+          [{gen_fsm, send_event, 2},
+           {gen_fsm, sync_send_all_state_event, 3},
+           {gen_fsm, sync_send_all_state_event, 2}]}).
 
 %% API
 -export([start_link/4, set_socket/2, send/3, status/1, status/2]).
@@ -326,14 +326,6 @@ handle_peerinfo(#state{sitename=SiteName, transport=Transport, socket=Socket, my
     end.
 
 
--ifdef(otp21).
-ssl_handshake(Socket, SslOpts) ->
-    ssl:handshake(Socket, SslOpts).
--else.
-ssl_handshake(Socket, SslOpts) ->
-    ssl:ssl_accept(Socket, SslOpts).
--endif.
-
 send_peerinfo(#state{transport=Transport, socket=Socket, sitename=SiteName} = State) ->
     OurNode = node(),
     case riak_repl_leader:leader_node()  of
@@ -375,7 +367,7 @@ send_peerinfo(#state{transport=Transport, socket=Socket, sitename=SiteName} = St
                     {ok, Data} = Transport:recv(Socket, 0, infinity),
                     case binary_to_term(Data) of
                         {peerinfo, _, [ssl_required|_]} ->
-                            case ssl_handshake(Socket, Config) of
+                            case ssl:handshake(Socket, Config) of
                                 {ok, SSLSocket} ->
                                     send_peerinfo(State#state{socket=SSLSocket,
                                                               transport=ranch_ssl});
