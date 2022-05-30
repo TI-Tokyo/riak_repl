@@ -41,8 +41,8 @@ test_prop_extra({ts_ddl_hashes, RemoteHashes}, Type) ->
     %% We just need one hash out of each list to match
     any_item_matches(RemoteHashes, LocalHashes);
 test_prop_extra(UnknownProp, Type) ->
-    lager:info("repl does not know what to do to compare ~p for ~p",
-               [UnknownProp, Type]),
+    logger:info("repl does not know what to do to compare ~p for ~p",
+                [UnknownProp, Type]),
     %% We don't know what to do with unknown properties, so to be safe
     %% default to a failed comparison
     false.

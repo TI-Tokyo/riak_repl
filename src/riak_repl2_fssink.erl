@@ -231,8 +231,8 @@ ts_to_robj({ts, _Part, [RObj]}) ->
        riak_object:to_binary(v1, RObj, msgpack)
      }];
 ts_to_robj(Unknown) ->
-    lager:error("bad_ts_wire_format on fullsync: expected a timeseries tuple, got ~p",
-                [Unknown]),
+    logger:error("bad_ts_wire_format on fullsync: expected a timeseries tuple, got ~p",
+                 [Unknown]),
     {error, bad_ts_wire_format}.
 
 terminate(_Reason, #state{fullsync_worker=FSW, work_dir=WorkDir, strategy=Strategy}) ->

@@ -35,7 +35,7 @@ maybe_postcommit(_PartitionBatch, _Bucket, fullsync, _Enabled) ->
 maybe_postcommit(_PartitionBatch, _Bucket, _Type, false) ->
     ok;
 maybe_postcommit({_PartIdx, Vals}=PartitionBatch, Bucket, _ReplProp, true) ->
-    %% lager:debug("Timeseries batch sent to repl~n    PartIdx~p => ~p...", [PartIdx, hd(Vals)]),
+    %% logger:debug("Timeseries batch sent to repl~n    PartIdx~p => ~p...", [PartIdx, hd(Vals)]),
     Meta = set_bucket_meta(Bucket),
 
     %% `set_bucket_meta/1' will return the `fail' atom if something
@@ -94,8 +94,8 @@ get_identity_hashes(Table) ->
         {_, {undef, _}} ->
             %% Module doesn't know about identity hashes, doesn't
             %% exist, etc
-            lager:warning("DDL module for ~p does not exist or is not "
-                          "compiled with identity hashes", [Table]),
+            logger:warning("DDL module for ~p does not exist or is not "
+                           "compiled with identity hashes", [Table]),
             [];
         HashList ->
             HashList

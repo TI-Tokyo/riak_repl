@@ -643,7 +643,7 @@ ts_partition_index(RObj, {Table, _}=Bucket) ->
 ts_partition_index(_RObj, _Bucket) ->
     %% Timeseries data can only exist in bucket types, but
     %% make dialyzer happy
-    lager:error("Timeseries object appears to be in legacy bucket", []),
+    logger:error("Timeseries object appears to be in legacy bucket", []),
     <<>>.
 
 %% gen_fsm callbacks
