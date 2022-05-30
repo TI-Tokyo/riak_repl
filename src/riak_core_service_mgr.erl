@@ -512,12 +512,12 @@ start_dispatcher({IP,Port}, MaxListeners, SubProtocols) ->
     {ok, RawAddress} = inet_parse:address(IP),
     {ok, Pid} =
         ranch:start_listener({IP,Port},
-                                ranch_tcp,
-                                [{ip, RawAddress},
-                                    {port, Port},
-                                    {num_acceptors, MaxListeners}],
-                                riak_core_service_conn,
-                                SubProtocols),
+                             ranch_tcp,
+                             #{socket_opts => [{ip, RawAddress},
+                                               {port, Port}],
+                               num_acceptors => MaxListeners},
+                             riak_core_service_conn,
+                             SubProtocols),
     ?LOG_INFO("Service manager: listening on ~s:~p", [IP, Port]),
     {ok, Pid}.
 
