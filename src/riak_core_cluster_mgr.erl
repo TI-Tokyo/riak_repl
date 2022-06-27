@@ -2,7 +2,7 @@
 %%
 %% Copyright (c) 2012 Basho Technologies, Inc.  All Rights Reserved.
 %%
-%% A cluster manager runs on every node. It registers a service via the 
+%% A cluster manager runs on every node. It registers a service via the
 %% riak_core_service_mgr with protocol 'cluster_mgr'. The service will either
 %% answer queries (if it's the leader), or foward them to the leader (if it's
 %% not the leader).
@@ -290,7 +290,7 @@ handle_call(get_connections, _From, State) ->
             NoLeaderResult = {ok, []},
             proxy_call(get_connections, NoLeaderResult, State)
     end;
-    
+
 
 %% Return possible IP addrs of nodes on the named remote cluster.
 %% If a leader has not been elected yet, return an empty list.
@@ -626,7 +626,7 @@ round_robin_balancer([Addr|Addrs]) ->
     Addrs ++ [Addr].
 
 %% Convert an inet:address to a string if needed.
-string_of_ip(IP) when is_tuple(IP) ->    
+string_of_ip(IP) when is_tuple(IP) ->
     inet_parse:ntoa(IP);
 string_of_ip(IP) ->
     IP.
@@ -743,7 +743,7 @@ cluster_mgr_sites_fun() ->
     %% get cluster names from cluster manager
     {ok, Ring} = riak_core_ring_manager:get_my_ring(),
     Clusters = riak_repl_ring:get_clusters(Ring),
-    [{?CLUSTER_NAME_LOCATOR_TYPE, Name} || {Name, _Addrs} <- Clusters].    
+    [{?CLUSTER_NAME_LOCATOR_TYPE, Name} || {Name, _Addrs} <- Clusters].
 
 %% @doc If the current leader, connect to all clusters that have been
 %%      currently persisted in the ring.
@@ -752,7 +752,7 @@ connect_to_persisted_clusters(State) ->
         true ->
             Fun = State#state.restore_targets_fun,
             ClusterTargets = Fun(),
-            ?LOG_DEBUG("Cluster Manager will connect to clusters: ~p", 
+            ?LOG_DEBUG("Cluster Manager will connect to clusters: ~p",
                         [ClusterTargets]),
             connect_to_targets(ClusterTargets);
         _ ->
