@@ -302,7 +302,7 @@ maybe_push(Binary, Meta) ->
           ?LOG_DEBUG("app env either set to always, or in default; doing cascade"),
           List = riak_repl_util:from_wire(Binary),
           Meta2 = orddict:erase(skip_count, Meta),
-          rtq_push(length(List), Binary, Meta2)
+          rtq_push(Binary, List, Meta2)
     end.
 
 %% KV data is a list of to_wire objects
