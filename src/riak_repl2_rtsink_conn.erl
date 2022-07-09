@@ -58,7 +58,7 @@
                 cont = <<>>,      %% Continuation from previous TCP buffer
                 bt_drops,         %% drops due to bucket type mis-matches
                 bt_interval,      %% how often (in ms) to report bt_drops
-                bt_timer          %% timer reference for interval   
+                bt_timer          %% timer reference for interval
                }).
 
 %% Register with service manager
@@ -168,9 +168,9 @@ handle_call(stop, _From, State) ->
 
 %% Note pattern patch on Ref
 handle_cast({ack, Ref, Seq, Skips}, State = #state{transport = T, socket = S,
-                                            seq_ref = Ref,
-                                            acked_seq = AckedTo,
-                                            completed = Completed}) ->
+                                                   seq_ref = Ref,
+                                                   acked_seq = AckedTo,
+                                                   completed = Completed}) ->
     %% Worker pool has completed the put, check the completed
     %% list and work out where we can ack back to
     %case ack_to(AckedTo, ordsets:add_element(Seq, Completed)) of
@@ -184,7 +184,7 @@ handle_cast({ack, Ref, Seq, Skips}, State = #state{transport = T, socket = S,
     end;
 handle_cast({ack, Ref, Seq, _Skips}, State) ->
     %% Nothing to send, it's old news.
-    ?LOG_DEBUG("Received ack ~p for previous sequence ~p\n", [Seq, Ref]),
+    ?LOG_DEBUG("Received ack ~p for previous sequence ~p", [Seq, Ref]),
     {noreply, State};
 handle_cast({drop, BucketType}, #state{bt_timer = undefined, bt_interval = Interval} = State) ->
     {ok, Timer} = timer:send_after(Interval, report_bt_drops),
@@ -193,7 +193,7 @@ handle_cast({drop, BucketType}, State) ->
     {noreply, bt_dropped(BucketType, State)}.
 
 handle_info({Proto, _S, TcpBin}, State= #state{cont = Cont})
-        when Proto == tcp; Proto == ssl ->
+  when Proto == tcp; Proto == ssl ->
     recv(<<Cont/binary, TcpBin/binary>>, State);
 handle_info({Closed, _S}, State = #state{cont = Cont})
         when Closed == tcp_closed; Closed == ssl_closed ->
@@ -203,15 +203,15 @@ handle_info({Closed, _S}, State = #state{cont = Cont})
         NumBytes ->
             riak_repl_stats:rt_sink_errors(),
             %% cached_peername not caclulated from socket, so should be valid
-            ?LOG_WARNING("Realtime connection from ~p closed with partial receive of ~b bytes\n",
-                          [peername(State), NumBytes])
+            ?LOG_WARNING("Realtime connection from ~p closed with partial receive of ~b bytes",
+                         [peername(State), NumBytes])
     end,
     {stop, normal, State};
-handle_info({Error, _S, Reason}, State= #state{cont = Cont}) when
-        Error == tcp_error; Error == ssl_error ->
+handle_info({Error, _S, Reason}, State= #state{cont = Cont})
+  when Error == tcp_error; Error == ssl_error ->
     %% peername not calculated from socket, so should be valid
     riak_repl_stats:rt_sink_errors(),
-    ?LOG_WARNING("Realtime connection from ~p network error ~p - ~b bytes pending\n",
+    ?LOG_WARNING("Realtime connection from ~p network error ~p - ~b bytes pending",
                   [peername(State), Reason, size(Cont)]),
     {stop, normal, State};
 handle_info(reactivate_socket, State = #state{remote = Remote, transport = T, socket = S,
@@ -220,8 +220,8 @@ handle_info(reactivate_socket, State = #state{remote = Remote, transport = T, so
         true ->
             {noreply, schedule_reactivate_socket(State#state{active = false})};
         _ ->
-            ?LOG_DEBUG("Realtime sink recovered - reactivating transport ~p socket ~p\n",
-                        [T, S]),
+            ?LOG_DEBUG("Realtime sink recovered - reactivating transport ~p socket ~p",
+                       [T, S]),
             %% Check the socket is ok
             case T:peername(S) of
                 {ok, _} ->
@@ -229,14 +229,14 @@ handle_info(reactivate_socket, State = #state{remote = Remote, transport = T, so
                     {noreply, State#state{active = true}};
                 {error, Reason} ->
                     riak_repl_stats:rt_sink_errors(),
-                    ?LOG_ERROR("Realtime replication sink for ~p had socket error - ~p\n",
-                                [Remote, Reason]),
+                    ?LOG_ERROR("Realtime replication sink for ~p had socket error - ~p",
+                               [Remote, Reason]),
                     {stop, normal, State}
             end
     end;
 handle_info(report_bt_drops, State=#state{bt_drops = DropDict}) ->
     Total = dict:fold(fun(BucketType, Counter, TotalCount) ->
-                          ?LOG_ERROR("drops due to missing or mismatched type ~p: ~p", 
+                          ?LOG_ERROR("drops due to missing or mismatched type ~p: ~p",
                           [BucketType, Counter]),
                           TotalCount + Counter
                       end,
@@ -299,10 +299,10 @@ maybe_push(Binary, Meta) ->
             ?LOG_DEBUG("Skipping cascade due to app env setting"),
             ok;
         always ->
-          ?LOG_DEBUG("app env either set to always, or in default; doing cascade"),
-          List = riak_repl_util:from_wire(Binary),
-          Meta2 = orddict:erase(skip_count, Meta),
-          rtq_push(Binary, List, Meta2)
+            ?LOG_DEBUG("app env either set to always, or in default; doing cascade"),
+            List = riak_repl_util:from_wire(Binary),
+            Meta2 = orddict:erase(skip_count, Meta),
+            rtq_push(Binary, List, Meta2)
     end.
 
 %% KV data is a list of to_wire objects
@@ -315,11 +315,11 @@ rtq_push(_Binary, {ts, PartIdx, Batch}, Meta) ->
 
 %% Note match on Seq
 do_write_objects(Seq, BinObjsMeta, State = #state{max_pending = MaxPending,
-                                              helper = Helper,
-                                              seq_ref = Ref,
-                                              expect_seq = Seq,
-                                              acked_seq = AckedSeq,
-                                              ver = Ver}) ->
+                                                  helper = Helper,
+                                                  seq_ref = Ref,
+                                                  expect_seq = Seq,
+                                                  acked_seq = AckedSeq,
+                                                  ver = Ver}) ->
     Me = self(),
     case make_donefun(BinObjsMeta, Me, Ref, Seq) of
         {DoneFun, BinObjs, Meta} ->
@@ -329,7 +329,7 @@ do_write_objects(Seq, BinObjsMeta, State = #state{max_pending = MaxPending,
                 false ->
                     BucketType = riak_repl_bucket_type_util:prop_get(?BT_META_TYPE, ?DEFAULT_BUCKET_TYPE, Meta),
                     ?LOG_DEBUG("Bucket type:~p is not equal on both the source and sink; not writing object.",
-                                [BucketType]),
+                               [BucketType]),
                     gen_server:cast(Me, {drop, BucketType}),
                     DoneFun()
             end;
@@ -427,8 +427,8 @@ schedule_reactivate_socket(State = #state{transport = T,
                                           deactivated = Deactivated}) ->
     case Active of
         true ->
-            ?LOG_DEBUG("Realtime sink overloaded - deactivating transport ~p socket ~p\n",
-                        [T, S]),
+            ?LOG_DEBUG("Realtime sink overloaded - deactivating transport ~p socket ~p",
+                       [T, S]),
             T:setopts(S, [{active, false}]),
             self() ! reactivate_socket,
             State#state{active = false, deactivated = Deactivated + 1};
@@ -436,7 +436,7 @@ schedule_reactivate_socket(State = #state{transport = T,
             %% already deactivated, try again in configured interval, or default
             ReactivateSockInt = get_reactivate_socket_interval(),
             ?LOG_DEBUG("reactivate_socket_interval_millis: ~sms.",
-              [ReactivateSockInt]),
+                       [ReactivateSockInt]),
 
             erlang:send_after(ReactivateSockInt, self(), reactivate_socket),
             State#state{active = {false, scheduled}};
@@ -469,12 +469,12 @@ riak_repl2_rtsink_conn_test_() ->
     {spawn,
      [
       {setup,
-        fun setup/0,
-        fun cleanup/1,
-        [
-         fun cache_peername_test_case/0,
-         fun reactivate_socket_interval_test_case/0
-        ]
+       fun setup/0,
+       fun cleanup/1,
+       [
+        fun cache_peername_test_case/0,
+        fun reactivate_socket_interval_test_case/0
+       ]
       }]}.
 
 setup() ->
@@ -533,14 +533,12 @@ cache_peername_test_case() ->
 
     catch(meck:unload(riak_repl_util)),
     meck:new(riak_repl_util, [passthrough]),
-    meck:expect(riak_repl_util, generate_socket_tag, fun(Prefix, _Transport, _Socket) ->
-         Portnum = rand:uniform(?PORT_RANGE),
-         lists:flatten(io_lib:format("~s_~p -> ~p:~p",[
-                Prefix,
-                Portnum,
-                ?LOOPBACK_TEST_PEER,
-                ?SINK_PORT]))
-         end),
+    meck:expect(riak_repl_util, generate_socket_tag,
+                fun(Prefix, _Transport, _Socket) ->
+                        Portnum = rand:uniform(?PORT_RANGE),
+                        lists:flatten(io_lib:format("~s_~p -> ~p:~p",
+                                                    [Prefix, Portnum, ?LOOPBACK_TEST_PEER, ?SINK_PORT]))
+                end),
 
     catch(meck:unload(riak_core_tcp_mon)),
     meck:new(riak_core_tcp_mon, [passthrough]),
@@ -567,24 +565,26 @@ start_source() ->
 start_source(NegotiatedVer) ->
     catch(meck:unload(riak_core_connection_mgr)),
     meck:new(riak_core_connection_mgr, [passthrough]),
-    meck:expect(riak_core_connection_mgr, connect, fun(_ServiceAndRemote, ClientSpec) ->
-        spawn_link(fun() ->
-            {_Proto, {TcpOpts, Module, Pid}} = ClientSpec,
-            {ok, Socket} = gen_tcp:connect("localhost", ?SINK_PORT, [binary | TcpOpts]),
-            ok = Module:connected(Socket, gen_tcp, {"localhost", ?SINK_PORT},
-              ?PROTOCOL(NegotiatedVer), Pid, [])
-        end),
-        {ok, make_ref()}
-    end),
+    meck:expect(riak_core_connection_mgr, connect,
+                fun(_ServiceAndRemote, ClientSpec) ->
+                        spawn_link(
+                          fun() ->
+                                  {_Proto, {TcpOpts, Module, Pid}} = ClientSpec,
+                                  {ok, Socket} = gen_tcp:connect("localhost", ?SINK_PORT, [binary | TcpOpts]),
+                                  ok = Module:connected(Socket, gen_tcp, {"localhost", ?SINK_PORT},
+                                                        ?PROTOCOL(NegotiatedVer), Pid, [])
+                          end),
+                        {ok, make_ref()}
+                end),
     meck:expect(riak_core_connection_mgr, disconnect, fun(_Remote) ->
-        ok
-    end),
+                                                              ok
+                                                      end),
     {ok, SourcePid} = riak_repl2_rtsource_conn:start_link("sink_cluster"),
     receive
         {sink_started, SinkPid} ->
             {ok, {SourcePid, SinkPid}}
     after 1000 ->
-        {error, timeout}
+            {error, timeout}
     end.
 
 start_sink() ->
@@ -596,10 +596,11 @@ start_sink() ->
     after 10000 ->
             {error, timeout}
     end.
+
 unload_mecks() ->
-    riak_repl_test_util:maybe_unload_mecks([
-        stateful, riak_core_ring_manager, riak_core_ring,
-        riak_repl2_rtsink_helper, gen_tcp, fake_source, riak_repl2_rtq]).
+    riak_repl_test_util:maybe_unload_mecks(
+      [stateful, riak_core_ring_manager, riak_core_ring,
+       riak_repl2_rtsink_helper, gen_tcp, fake_source, riak_repl2_rtq]).
 
 
 -endif.
