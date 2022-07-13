@@ -2,16 +2,12 @@
 
 -compile([export_all, nowarn_export_all]).
 
--ifdef(EQC).
--include_lib("eqc/include/eqc.hrl").
--include_lib("eqc/include/eqc_statem.hrl").
-
--ifdef(TEST).
+-include_lib("proper/include/proper.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
 -define(QC_OUT(P),
-        eqc:on_output(fun(Str, Args) ->
-                              io:format(user, Str, Args) end, P)).
+        proper:on_output(fun(Str, Args) ->
+                                 io:format(user, Str, Args) end, P)).
 
 -define(SINK_PORT, 5008).
 -define(all_remotes, ["a", "b", "c", "d", "e"]).
@@ -44,11 +40,11 @@
     already_routed
 }).
 
-%% rt_sink_eqc_test_() ->
+%% rt_sink_proper_test_() ->
 %%    {spawn,
 %%       [%% Run the quickcheck tests
 %%        {timeout, 30,
-%%         ?_assertEqual(true, eqc:quickcheck(eqc:numtests(250, ?QC_OUT(?MODULE:prop_main()))))}
+%%         ?_assertEqual(true, proper:quickcheck(proper:numtests(250, ?QC_OUT(?MODULE:prop_main()))))}
 %%       ]
 %%    }.
 
@@ -73,7 +69,7 @@ xprop_main() ->
     ?FORALL(Cmds, commands(?MODULE),
         aggregate(command_names(Cmds), begin
             {H, S, Res} = run_commands(?MODULE, Cmds),
-            Out = pretty_commands(?MODULE, Cmds, {H,S,Res}, Res == ok),
+            Out = proper:pretty_commands(?MODULE, Cmds, {H,S,Res}, Res == ok),
             teardown(),
             unload_mecks(),
             Out
@@ -645,6 +641,3 @@ fake_source_loop(State) ->
         _What ->
             fake_source_loop(State)
     end.
-
--endif.
--endif. % EQC

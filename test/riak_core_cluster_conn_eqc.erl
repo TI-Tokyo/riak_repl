@@ -22,12 +22,10 @@
 
 -module(riak_core_cluster_conn_eqc).
 
--ifdef(EQC).
--include_lib("eqc/include/eqc.hrl").
--include_lib("eqc/include/eqc_fsm.hrl").
+-include_lib("proper/include/proper.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
-%% eqc properties
+%% proper properties
 -export([prop_cluster_conn_state_transition/0]).
 
 %% States
@@ -36,7 +34,7 @@
          waiting_for_cluster_members/1,
          connected/1]).
 
-%% eqc_fsm callbacks
+%% proper_fsm callbacks
 -export([initial_state/0,
          initial_state_data/0,
          next_state_data/5,
@@ -52,7 +50,7 @@
 -compile([{nowarn_deprecated_function, [{gen_fsm, send_event, 2}]}]).
 
 -define(QC_OUT(P),
-        eqc:on_output(fun(Str, Args) ->
+        proper:on_output(fun(Str, Args) ->
                               io:format(user, Str, Args) end, P)).
 
 -define(TEST_ITERATIONS, 500).
@@ -67,8 +65,8 @@
 %% Eunit tests
 %%====================================================================
 
-eqc_test_() ->
-    {timeout, 60, ?_assertEqual(true, eqc:quickcheck(eqc:testing_time(30, ?QC_OUT(prop_cluster_conn_state_transition()))))}.
+proper_test_() ->
+    {timeout, 60, ?_assertEqual(true, proper:quickcheck(proper:testing_time(30, ?QC_OUT(prop_cluster_conn_state_transition()))))}.
 
 setup() ->
     error_logger:tty(false),
@@ -99,12 +97,12 @@ prop_cluster_conn_state_transition() ->
                 {ok, Pid} = ?TEST_MODULE:start_link("FARFARAWAY", test),
                 {H, {_F, _S}, Res} =
                     run_commands(?MODULE, Cmds, [{fsm_pid, Pid}]),
-                aggregate(zip(state_names(H), command_names(Cmds)),
+                aggregate(zip(proper:state_names(H), proper:command_names(Cmds)),
                           ?WHENFAIL(
                              begin
                                  ?debugFmt("\nCmds: ~p~n",
-                                           [zip(state_names(H),
-                                                command_names(Cmds))]),
+                                           [zip(proper:state_names(H),
+                                                proper:command_names(Cmds))]),
                                  ?debugFmt("\nResult: ~p~n", [Res]),
                                  ?debugFmt("\nHistory: ~p~n", [H])
                              end,
@@ -112,7 +110,7 @@ prop_cluster_conn_state_transition() ->
             end)).
 
 %%====================================================================
-%% eqc_fsm callbacks
+%% proper_fsm callbacks
 %%====================================================================
 
 initiating_connection(_S) ->
@@ -208,7 +206,7 @@ test() ->
     test(500).
 
 test(Iterations) ->
-    eqc:quickcheck(eqc:numtests(Iterations, prop_cluster_conn_state_transition())).
+    proper:quickcheck(proper:numtests(Iterations, prop_cluster_conn_state_transition())).
 
 current_fsm_state(Pid) ->
     {CurrentState, _} = ?TEST_MODULE:current_state(Pid),
@@ -242,5 +240,3 @@ cluster_members(Pid) ->
               {"fake-address-2", 2}
              ]},
     gen_fsm:send_event(Pid, Event).
-
--endif.

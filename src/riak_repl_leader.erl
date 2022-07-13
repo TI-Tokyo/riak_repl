@@ -47,14 +47,9 @@
 -define(SERVER, riak_repl_leader_gs).
 
 -ifdef(TEST).
--ifdef(EQC).
--include_lib("eqc/include/eqc.hrl").
--export([prop_balance/0]).
--endif.
--endif.
-
--ifdef(TEST).
+-include_lib("proper/include/proper.hrl").
 -include_lib("eunit/include/eunit.hrl").
+-export([prop_balance/0]).
 -endif.
 
 -record(state, {helper_pid,  % pid of riak_repl_leader_helper
@@ -684,8 +679,6 @@ balance_clients_test() ->
                             self()}, {site3, self()}]}], [site1, site2, site3])),
     ok.
 
--ifdef(EQC).
-
 node_gen() ->
     elements([node1, node2, node3, node4, node5, node6]).
 
@@ -773,10 +766,8 @@ prop_balance() ->
         end).
 
 %% eunit wrapper
-eqc_test_() ->
+proper_test_() ->
     {spawn,
-     [{timeout, 60, ?_assert(eqc:quickcheck(eqc:testing_time(4, prop_balance())))}]}.
-
--endif.
+     [{timeout, 60, ?_assert(proper:quickcheck(proper:testing_time(4, prop_balance())))}]}.
 
 -endif.

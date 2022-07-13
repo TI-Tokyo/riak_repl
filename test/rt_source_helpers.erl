@@ -2,8 +2,6 @@
 
 -compile([export_all, nowarn_export_all]).
 
--ifdef(TEST).
-
 -include("rt_source_eqc.hrl").
 
 -include_lib("eunit/include/eunit.hrl").
@@ -346,5 +344,3 @@ fake_sink_nom_frames({ok, Frame, Rest}, History) ->
     fake_sink_nom_frames(Rest, [Frame | History]);
 fake_sink_nom_frames(Bin, History) ->
     fake_sink_nom_frames(riak_repl2_rtframe:decode(Bin), History).
-
--endif.

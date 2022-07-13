@@ -6,21 +6,15 @@
 -compile([export_all, nowarn_export_all]).
 
 -include_lib("kernel/include/logger.hrl").
-
--ifdef(EQC).
--include_lib("eqc/include/eqc.hrl").
--include_lib("eqc/include/eqc_statem.hrl").
+-include_lib("proper/include/proper.hrl").
+-include_lib("eunit/include/eunit.hrl").
 
 -ifdef(PULSE).
 -include_lib("pulse/include/pulse.hrl").
 -endif.
 
--ifdef(TEST).
--include_lib("eunit/include/eunit.hrl").
--endif.
-
 -define(QC_OUT(P),
-        eqc:on_output(fun(Str, Args) -> io:format(user, Str, Args) end, P)).
+        proper:on_output(fun(Str, Args) -> io:format(user, Str, Args) end, P)).
 
 -define(BINARIED_OBJ_SIZE, 39). % 39 = byte_size(term_to_binary([make_ref()])).
 
@@ -43,8 +37,8 @@
 rtq_test_() ->
     {spawn,
        [ % run qc tests
-          {timeout, 60, ?_assertEqual(true, eqc:quickcheck(eqc:numtests(250, ?QC_OUT(prop_main()))))},
-          {timeout, 60, ?_assertEqual(true, eqc:quickcheck(eqc:numtests(250, ?QC_OUT(prop_parallel()))))}
+          {timeout, 60, ?_assertEqual(true, proper:quickcheck(proper:numtests(250, ?QC_OUT(prop_main()))))},
+          {timeout, 60, ?_assertEqual(true, proper:quickcheck(proper:numtests(250, ?QC_OUT(prop_parallel()))))}
      ]
     }.
 
@@ -133,7 +127,7 @@ kill_all_pids(T) when is_tuple(T)   -> kill_all_pids(tuple_to_list(T));
 kill_all_pids(_)                    -> ok.
 
 %% ====================================================================
-%% eqc_statem callbacks
+%% proper_statem callbacks
 %% ====================================================================
 
 initial_state() ->
@@ -468,5 +462,3 @@ trim(Q, #state{max_bytes=Max}) ->
             ok
     end,
     NewQ.
-
--endif.

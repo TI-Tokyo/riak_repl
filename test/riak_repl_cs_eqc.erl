@@ -5,15 +5,12 @@
 -module(riak_repl_cs_eqc).
 -compile([export_all, nowarn_export_all]).
 
--ifdef(EQC).
--include_lib("eqc/include/eqc.hrl").
+-include_lib("proper/include/proper.hrl").
 
--ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
--endif.
 
 -define(QC_OUT(P),
-        eqc:on_output(fun(Str, Args) -> io:format(user, Str, Args) end, P)).
+        proper:on_output(fun(Str, Args) -> io:format(user, Str, Args) end, P)).
 
 
 decision_table() ->
@@ -124,14 +121,14 @@ riak_object() ->
              end
          end).
 
-eqc_test_() ->
+proper_test_() ->
     NumTests = 1024,
     {inorder,
      [ % run qc tests
-       ?_assertEqual(true, eqc:quickcheck(eqc:numtests(NumTests, ?QC_OUT(prop_main(v1))))),
-       ?_assertEqual(true, eqc:quickcheck(eqc:numtests(NumTests, ?QC_OUT(prop_main(v2))))),
-       ?_assertEqual(true, eqc:quickcheck(eqc:numtests(NumTests, ?QC_OUT(prop_main(v2_blockrt))))),
-       ?_assertEqual(true, eqc:quickcheck(eqc:numtests(NumTests, ?QC_OUT(prop_main(v2_no_blockts_rt)))))
+       ?_assertEqual(true, proper:quickcheck(proper:numtests(NumTests, ?QC_OUT(prop_main(v1))))),
+       ?_assertEqual(true, proper:quickcheck(proper:numtests(NumTests, ?QC_OUT(prop_main(v2))))),
+       ?_assertEqual(true, proper:quickcheck(proper:numtests(NumTests, ?QC_OUT(prop_main(v2_blockrt))))),
+       ?_assertEqual(true, proper:quickcheck(proper:numtests(NumTests, ?QC_OUT(prop_main(v2_no_blockts_rt)))))
      ]}.
 
 fs_or_rt() -> oneof([fs, rt]).
@@ -175,5 +172,3 @@ prop_main(DecisionTableVersion) ->
                 %% ?debugVal({Verify, Impl, DecisionTableVersion}),
                 Verify =:= Impl
             end).
-
--endif.

@@ -28,11 +28,8 @@
 
 -define(SERVER, riak_repl2_leader_gs).
 
--ifdef(EQC).
--include_lib("eqc/include/eqc.hrl").
--endif.
-
 -ifdef(TEST).
+-include_lib("proper/include/proper.hrl").
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
@@ -47,7 +44,7 @@
                 check_tref :: timer:tref(),     % check mailbox timer
                 elected_mbox_size :: undefined | non_neg_integer()  % elected leader box size
                }).
-     
+
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -133,7 +130,7 @@ handle_cast({set_candidates, CandidatesIn, WorkersIn}, State) ->
             {noreply, State};
         {_OldCandidates, _OldWorkers} ->
             UpdState1 = remonitor_leader(undefined, State),
-            UpdState2 = UpdState1#state{candidates=Candidates, 
+            UpdState2 = UpdState1#state{candidates=Candidates,
                                         workers=Workers,
                                         leader_node=undefined},
             {noreply, restart_helper(UpdState2)}
@@ -240,8 +237,8 @@ remonitor_leader(LeaderPid, State) ->
             State#state{leader_mref = erlang:monitor(process, LeaderPid)}
     end.
 
-%% Restart the helper 
-restart_helper(State) ->    
+%% Restart the helper
+restart_helper(State) ->
     case State#state.helper_pid of
         undefined -> % no helper running, start one if needed
             maybe_start_helper(State);

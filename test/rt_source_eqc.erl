@@ -2,16 +2,14 @@
 
 -compile([export_all, nowarn_export_all]).
 
--ifdef(EQC).
 -include("rt_source_eqc.hrl").
--include_lib("eqc/include/eqc.hrl").
--include_lib("eqc/include/eqc_statem.hrl").
+-include_lib("proper/include/proper.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
 -define(P(EXPR), PPP = (EXPR), case PPP of true -> ok; _ -> io:format(user, "PPP ~p at line ~p\n", [PPP, ?LINE]) end, PPP).
 -define(QC_OUT(P),
-        eqc:on_output(fun(Str, Args) ->
-                              io:format(user, Str, Args) end, P)).
+        proper:on_output(fun(Str, Args) ->
+                                 io:format(user, Str, Args) end, P)).
 
 -record(pushed, {
     seq,
@@ -70,7 +68,7 @@ property_test() ->
     {spawn,
      [%% Run the quickcheck tests
       {timeout, 120,
-       ?_assertEqual(true, eqc:quickcheck(eqc:numtests(5, ?QC_OUT(prop_main()))))}
+       ?_assertEqual(true, proper:quickcheck(proper:numtests(5, ?QC_OUT(prop_main()))))}
      ]
     }.
 
@@ -85,8 +83,8 @@ prop_main() ->
     ?FORALL(Cmds, noshrink(commands(?MODULE)),
         begin
              {H, S, Res} = run_commands(?MODULE, Cmds),
-            aggregate(command_names(Cmds),
-                      pretty_commands(?MODULE, Cmds, {H,S,Res}, Res == ok))
+            aggregate(proper:command_names(Cmds),
+                      proper:pretty_commands(?MODULE, Cmds, {H,S,Res}, Res == ok))
         end)).
 
 %% ====================================================================
@@ -611,4 +609,3 @@ ack_objects(NumToAck, {Remote, SrcState}) ->
         true ->
             []
     end.
--endif.
