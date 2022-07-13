@@ -163,7 +163,7 @@ rt_update_events(Ring) ->
     _ = riak_repl2_rt:ensure_rt(riak_repl_ring:rt_enabled(Ring),
                                 riak_repl_ring:rt_started(Ring)),
     %% ensure_rt sets this
-    RTEnabled = app_helper:get_env(riak_repl, rtenabled, false),
+    RTEnabled = application:get_env(riak_repl, rtenabled, false),
 
     RC = case riak_repl_ring:get_repl_config(Ring) of
         undefined ->

@@ -27,7 +27,7 @@
 
 -behavior(gen_fsm).
 
--compile({nowarn_deprecated_function, 
+-compile({nowarn_deprecated_function,
             [{gen_fsm, start_link, 3},
                 {gen_fsm, send_event, 2},
                 {gen_fsm, sync_send_event, 3},
@@ -83,7 +83,7 @@
 -type remote() :: {cluster_by_name, clustername()} | {cluster_by_addr, ip_addr()}.
 -type peer_address() :: {string(), pos_integer()}.
 -type node_address() :: {atom(), peer_address()}.
--type ranch_transport_messages() :: {atom(), atom(), atom()}.
+-type ranch_transport_messages() :: {atom(), atom(), atom(), atom()}.
 -record(state, {mode :: atom(),
                 remote :: remote(),
                 socket :: port() | undefined,
@@ -390,7 +390,7 @@ handle_info({TransError, Socket, Error},
             StateName,
             State=#state{remote=Remote,
                          socket=Socket,
-                         transport_msgs = {_, _, TransError}}) ->
+                         transport_msgs = {_, _, TransError, _}}) ->
     ?LOG_ERROR("cluster_conn: connection ~p failed in state ~s because ~p", [Remote, StateName, Error]),
     {stop, Error, State};
 handle_info({TransClosed, Socket} = Msg,
