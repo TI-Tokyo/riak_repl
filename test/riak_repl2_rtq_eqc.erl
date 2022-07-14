@@ -66,40 +66,37 @@ prop_main() ->
                    setup(),
                    fun() -> cleanup() end
            end,
-    ?FORALL(Cmds, commands(?MODULE),
-        begin
-                {H, S, Res} = run_commands(Cmds),
-                catch(exit(S#state.rtq, kill)),
-                aggregate(command_names(Cmds),
-                    pretty_commands(?MODULE, Cmds, {H,S,Res}, Res==ok))
-            end)).
+           ?FORALL(Cmds, commands(?MODULE),
+                   begin
+                       {_H, S, _Res} = proper_statem:run_commands(?MODULE, Cmds),
+                       catch(exit(S#state.rtq, kill)),
+                       true
+                   end)).
 
 prop_parallel() ->
     ?SETUP(fun() ->
                    setup(),
                    fun() -> cleanup() end
            end,
-    ?LET(Shrinking, parameter(shrinking, false),
-    ?FORALL(Cmds, parallel_commands(?MODULE),
-    ?ALWAYS(if Shrinking -> 10; true -> 1 end,
-        begin
-                {H, S, Res} = run_parallel_commands(Cmds),
-                kill_all_pids({H, S}),
-                    pretty_commands(?MODULE, Cmds, {H,S,Res}, Res==ok)
-        end)))).
+           ?FORALL(Cmds, parallel_commands(?MODULE),
+                   begin
+                       {H, S, _Res} = proper_statem:run_parallel_commands(?MODULE, Cmds),
+                       kill_all_pids({H, S}),
+                       true
+                   end)).
 
 -ifdef(PULSE).
 
 prop_pulse() ->
-  ?FORALL(Cmds, parallel_commands(?MODULE),
-  ?PULSE(HSR={_, _, R},
-    begin
-      run_parallel_commands(?MODULE, Cmds)
-    end,
-    %catch(exit((element(2, HSR))#state.rtq, kill)),
-    aggregate(command_names(Cmds),
-    pretty_commands(?MODULE, Cmds, HSR,
-      R == ok)))).
+    ?FORALL(Cmds, parallel_commands(?MODULE),
+            ?PULSE(HSR={_, _, R},
+                   begin
+                       proper:run_parallel_commands(?MODULE, Cmds)
+                   end,
+                   %% catch(exit((element(2, HSR))#state.rtq, kill)),
+                   aggregate(proper:command_names(?MODULE, Cmds),
+                             proper:pretty_commands(?MODULE, Cmds, HSR,
+                                                    R == ok)))).
 
 
 pulse_instrument() ->

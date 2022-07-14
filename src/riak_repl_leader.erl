@@ -768,6 +768,6 @@ prop_balance() ->
 %% eunit wrapper
 proper_test_() ->
     {spawn,
-     [{timeout, 60, ?_assert(proper:quickcheck(proper:testing_time(4, prop_balance())))}]}.
+     [{timeout, 60, ?_assert(proper:quickcheck(proper:numtests(100, prop_balance())))}]}.
 
 -endif.
