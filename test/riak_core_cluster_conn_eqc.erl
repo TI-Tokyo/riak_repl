@@ -41,11 +41,20 @@
          precondition/4,
          postcondition/5]).
 
+-export([initiating_connection/1,
+         stopped/1,
+         current_fsm_state/1,
+         send_timeout/1,
+         poll_cluster/1,
+         garbage_event/1,
+         connected_to_remote/1,
+         cluster_name/1,
+         cluster_members/1
+        ]).
+
 %% Helpers
 -export([test/0,
          test/1]).
-
--compile([export_all, nowarn_export_all]).
 
 -compile([{nowarn_deprecated_function, [{gen_fsm, send_event, 2}]}]).
 
@@ -66,7 +75,8 @@
 %%====================================================================
 
 proper_test_() ->
-    {timeout, 60, ?_assertEqual(true, proper:quickcheck(proper:testing_time(30, ?QC_OUT(prop_cluster_conn_state_transition()))))}.
+    {timeout, 60, ?_assert(proper:quickcheck(
+                             proper:numtests(100, ?QC_OUT(prop_cluster_conn_state_transition()))))}.
 
 setup() ->
     error_logger:tty(false),
@@ -92,17 +102,17 @@ prop_cluster_conn_state_transition() ->
                    fun() -> cleanup(Apps) end
            end,
     ?FORALL(Cmds,
-            commands(?MODULE),
+            proper_fsm:commands(?MODULE),
             begin
                 {ok, Pid} = ?TEST_MODULE:start_link("FARFARAWAY", test),
                 {H, {_F, _S}, Res} =
-                    run_commands(?MODULE, Cmds, [{fsm_pid, Pid}]),
-                aggregate(zip(proper:state_names(H), proper:command_names(Cmds)),
+                    proper_fsm:run_commands(?MODULE, Cmds, [{fsm_pid, Pid}]),
+                aggregate(zip(proper_fsm:state_names(H), proper_statem:command_names(Cmds)),
                           ?WHENFAIL(
                              begin
                                  ?debugFmt("\nCmds: ~p~n",
-                                           [zip(proper:state_names(H),
-                                                proper:command_names(Cmds))]),
+                                           [zip(proper_fsm:state_names(H),
+                                                proper_statem:command_names(Cmds))]),
                                  ?debugFmt("\nResult: ~p~n", [Res]),
                                  ?debugFmt("\nHistory: ~p~n", [H])
                              end,
@@ -170,7 +180,7 @@ precondition(_From, _To, _S, _C) ->
 
 postcondition(initiating_connection, connecting, _S, {call, ?MODULE, send_timeout, [Pid]}, _R) ->
     ?P(?MODULE:current_fsm_state(Pid) =:= connecting);
-postcondition(connected, connected, _S ,{call, ?MODULE, status, _}, R) ->
+postcondition(connected, connected, _S, {call, ?MODULE, status, _}, R) ->
     ExpectedStatus = {fake_socket,
                       ranch_tcp,
                       "overtherainbow",
