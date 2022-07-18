@@ -2,9 +2,9 @@ name: Erlang CI
 
 on:
   push:
-    branches: [ develop ]
+    branches: [ develop, riak_ts-develop ]
   pull_request:
-    branches: [ develop ]
+    branches: [ develop, riak_ts-develop ]
 
 
 jobs:
