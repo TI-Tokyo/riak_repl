@@ -41,8 +41,10 @@
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 
+-ifdef('I have found a way to work around the proper_gen:rand_choose([]) failure').
 %% Test API
 -export([current_state/1]).
+-endif.
 
 %% For testing, we need to have two different cluster manager services running
 %% on the same node, which is normally not done. The remote cluster service is
@@ -462,10 +464,12 @@ initiate_connection(State=#state{remote=Remote}) ->
 %% ===================================================================
 
 -ifdef(TEST).
+-ifdef('I have found a way to work around the proper_gen:rand_choose([]) failure').
 
 %% @doc Get the current state of the fsm for testing inspection
 -spec current_state(pid()) -> {atom(), #state{}} | {error, term()}.
 current_state(Pid) ->
     gen_fsm:sync_send_all_state_event(Pid, current_state).
 
+-endif.
 -endif.

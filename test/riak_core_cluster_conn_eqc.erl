@@ -22,6 +22,8 @@
 
 -module(riak_core_cluster_conn_eqc).
 
+-ifdef('I have found a way to work around the proper_gen:rand_choose([]) failure').
+
 -include_lib("proper/include/proper.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
@@ -250,3 +252,5 @@ cluster_members(Pid) ->
               {"fake-address-2", 2}
              ]},
     gen_fsm:send_event(Pid, Event).
+
+-endif.
