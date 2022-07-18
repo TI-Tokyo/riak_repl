@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Compile
-        run: ./rebar3 compile
+        run: apt-get update && apt-get install -y cmake libboost-dev && ./rebar3 compile
       - name: Run xref and dialyzer
         run: ./rebar3 do xref, dialyzer
       - name: Run eunit
