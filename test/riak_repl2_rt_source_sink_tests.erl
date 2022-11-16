@@ -45,8 +45,8 @@ cleanup(State) ->
     %% riak_repl_test_util:kill_and_wait(riak_core_tcp_mon),
     [kill_proc(P) || P <- [TCPMon, RT, riak_repl2_rtq]],
     riak_repl_test_util:stop_test_ring(),
-    meck:unload(),
-    process_flag(trap_exit, false).
+    % process_flag(trap_exit, false),
+    meck:unload().
 
 kill_proc(undefined) ->
     ok;
