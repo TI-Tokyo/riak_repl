@@ -10,7 +10,7 @@
 -include_lib("kernel/include/logger.hrl").
 
 % external api; generally used by ranch
--export([start_link/4]).
+-export([start_link/3]).
 % gen_fsm
 -export([init/1]).
 -export([
@@ -28,7 +28,7 @@
 %% Public API
 %% ===============
 
-start_link(Listener, Socket, Transport, InArgs) ->
+start_link(Listener, Transport, InArgs) ->
     ?LOG_DEBUG("Start_link dispatch_service"),
     % to avoid a race condition with ranch, we need to do a little
     % song and dance with the init and start up.
@@ -36,15 +36,15 @@ start_link(Listener, Socket, Transport, InArgs) ->
     % and the ranch_ack does a blocking call into the process that starts
     % the gen_*.
     % http://ninenines.eu/docs/en/ranch/HEAD/guide/protocols/#using_gen_server
-    proc_lib:start_link(?MODULE, init, [{Listener, Socket, Transport, InArgs}]).
+    proc_lib:start_link(?MODULE, init, [{Listener, Transport, InArgs}]).
 
 %% ===============
 %% Init
 %% ===============
 
-init({Listener, Socket, Transport, InArgs}) ->
+init({Listener, Transport, InArgs}) ->
     ok = proc_lib:init_ack({ok, self()}),
-    {ok, _} = ranch:handshake(Listener),
+    {ok, Socket} = ranch:handshake(Listener),
     ok = Transport:setopts(Socket, ?CONNECT_OPTIONS),
     ok = Transport:setopts(Socket, [{active, once}]),
     TransportMsgs = Transport:messages(),
@@ -85,7 +85,7 @@ handle_event(_Req, StateName, State) ->
 %% handle_info
 %% ===============
 
-handle_info({TransOk, Socket, Data}, wait_for_hello, State = #state{socket = Socket, transport_msgs = {TransOk, _, _}}) when is_binary(Data) ->
+handle_info({TransOk, Socket, Data}, wait_for_hello, State = #state{socket = Socket, transport_msgs = {TransOk, _, _, _}}) when is_binary(Data) ->
     case binary_to_term(Data) of
         {?CTRL_HELLO, _CTRL_REV, ThierCaps} ->
             SSLEnabled = app_helper:get_env(riak_core, ssl_enabled, false),
@@ -107,7 +107,7 @@ handle_info({TransOk, Socket, Data}, wait_for_hello, State = #state{socket = Soc
             {stop, {error, invalid_hello}, State}
     end;
 
-handle_info({TransOk, Socket, Data}, wait_for_protocol_versions, State = #state{socket = Socket, transport_msgs = {TransOk, _, _}}) when is_binary(Data) ->
+handle_info({TransOk, Socket, Data}, wait_for_protocol_versions, State = #state{socket = Socket, transport_msgs = {TransOk, _, _, _}}) when is_binary(Data) ->
     case binary_to_term(Data) of
         {ClientProto, _Versions} = ClientVersions->
             Transport = State#state.transport,
@@ -131,11 +131,11 @@ handle_info({TransOk, Socket, Data}, wait_for_protocol_versions, State = #state{
             {stop, {error, invalid_protocol_response}, State}
     end;
 
-handle_info({TransError, Socket, Error}, _StateName, State = #state{socket = Socket, transport_msgs = {_, _, TransError}}) ->
+handle_info({TransError, Socket, Error}, _StateName, State = #state{socket = Socket, transport_msgs = {_, _, TransError, _}}) ->
     ?LOG_WARNING("Socket error: ~p", [Error]),
     {stop, Error, State};
 
-handle_info({TransClosed, Socket}, _StateName, State = #state{socket = Socket, transport_msgs = {_, TransClosed, _}}) ->
+handle_info({TransClosed, Socket}, _StateName, State = #state{socket = Socket, transport_msgs = {_, TransClosed, _, _}}) ->
     ?LOG_DEBUG("Socket closed"),
     {stop, normal, State}.
 

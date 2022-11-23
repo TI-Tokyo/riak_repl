@@ -70,14 +70,14 @@
          ]).
 
 %% ranch callbacks
--export([start_link/4]).
+-export([start_link/3]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
 %% internal
--export([dispatch_service/4]).
+-export([dispatch_service/3]).
 
 %%%===================================================================
 %%% API
@@ -103,11 +103,9 @@ start_link() ->
 start_link({IP,Port}) when is_integer(Port), Port >= 0 ->
     case valid_host_ip(IP) of
         false ->
-            ?LOG_DEBUG("Service Manager won't start with invalid IP: ~p", [IP]),
             ?LOG_WARNING("Service Manager won't start with invalid IP: ~p", [IP]),
             {error, invalid_ip};
         true ->
-            ?LOG_DEBUG("Starting Core Service Manager at ~p", [{IP,Port}]),
             ?LOG_INFO("Starting Core Service Manager at ~p", [{IP,Port}]),
             Args = [{IP,Port}],
             Options = [],
@@ -171,7 +169,7 @@ stop() ->
 %%%===================================================================
 
 init([IpAddr]) ->
-    {ok, Pid} = start_dispatcher(IpAddr, ?MAX_LISTENERS, []),
+    {ok, Pid} = start_dispatcher(IpAddr, []),
     {ok, #state{dispatch_addr = IpAddr, dispatcher_pid=Pid}}.
 
 handle_call({is_registered, service, ProtocolId}, _From, State) ->
@@ -289,16 +287,16 @@ incr_count_for_protocol_id(ProtocolId, Incr, ServiceStatus) ->
 %% @private
 %% Host callback function, called by ranch for each accepted connection by way of
 %% of the ranch:start_listener() call above, specifying this module.
-start_link(Listener, Socket, Transport, SubProtocols) ->
+start_link(Listener, Transport, SubProtocols) ->
     ?LOG_DEBUG("Start_link dispatch_service"),
-    {ok, spawn_link(?MODULE, dispatch_service, [Listener, Socket, Transport, SubProtocols])}.
+    {ok, spawn_link(?MODULE, dispatch_service, [Listener, Transport, SubProtocols])}.
 
 %% Body of the main dispatch loop. This is instantiated once for each connection
 %% we accept because it transforms itself into the SubProtocol once it receives
 %% the sub protocol and version, negotiated with the client.
-dispatch_service(Listener, Socket, Transport, _Args) ->
+dispatch_service(Listener, Transport, _Args) ->
     %% tell ranch "we've got it. thanks pardner"
-    {ok, _} = ranch:handshake(Listener),
+    {ok, Socket} = ranch:handshake(Listener),
     %% set some starting options for the channel; these should match the client
     ?LOG_DEBUG("setting system options on service side: ~p", [?CONNECT_OPTIONS]),
     ok = Transport:setopts(Socket, ?CONNECT_OPTIONS),
@@ -507,17 +505,17 @@ normalize_ip(IP) when is_tuple(IP) ->
 %% acceptor function called as `Module:Function(Listener, Socket, Transport, Args)',
 %% which must create its own process and return `{ok, pid()}'.
 
--spec(start_dispatcher(ip_addr(), non_neg_integer(), [hostspec()]) -> {ok, pid()}).
-start_dispatcher({IP,Port}, MaxListeners, SubProtocols) ->
+-spec(start_dispatcher(ip_addr(), [hostspec()]) -> {ok, pid()}).
+start_dispatcher({IP,Port}, SubProtocols) ->
     {ok, RawAddress} = inet_parse:address(IP),
     {ok, Pid} =
         ranch:start_listener({IP,Port},
-                                ranch_tcp,
-                                [{ip, RawAddress},
-                                    {port, Port},
-                                    {num_acceptors, MaxListeners}],
-                                riak_core_service_conn,
-                                SubProtocols),
+                             ranch_tcp,
+                             #{socket_opts => [{ip, RawAddress},
+                                               {port, Port}],
+                               num_acceptors => ?MAX_LISTENERS},
+                             riak_core_service_conn,
+                             SubProtocols),
     ?LOG_INFO("Service manager: listening on ~s:~p", [IP, Port]),
     {ok, Pid}.
 
