@@ -83,7 +83,7 @@
 -type remote() :: {cluster_by_name, clustername()} | {cluster_by_addr, ip_addr()}.
 -type peer_address() :: {string(), pos_integer()}.
 -type node_address() :: {atom(), peer_address()}.
--type ranch_transport_messages() :: {atom(), atom(), atom()}.
+-type ranch_transport_messages() :: {atom(), atom(), atom(), atom()}.
 -record(state, {mode :: atom(),
                 remote :: remote(),
                 socket :: port() | undefined,
@@ -355,21 +355,21 @@ handle_sync_event(_Event, _From, StateName, State) ->
 %% @doc Handle any non-fsm messages
 handle_info({TransOK, Socket, Name},
             waiting_for_cluster_name,
-            State=#state{socket=Socket, transport_msgs = {TransOK, _, _}}) ->
+            State=#state{socket=Socket, transport_msgs = {TransOK, _, _, _}}) ->
     gen_fsm:send_event(self(), {cluster_name, binary_to_term(Name)}),
     Transport = State#state.transport,
     _ = Transport:setopts(Socket, [{active, once}]),
     {next_state, waiting_for_cluster_name, State};
 handle_info({TransOK, Socket, Members},
             waiting_for_cluster_members,
-            State=#state{socket=Socket, transport_msgs = {TransOK, _, _}, proto_version={1,0}}) ->
+            State=#state{socket=Socket, transport_msgs = {TransOK, _, _, _}, proto_version={1,0}}) ->
     Transport = State#state.transport,
     gen_fsm:send_event(self(), {cluster_members, binary_to_term(Members)}),
     _ = Transport:setopts(Socket, [{active, once}]),
     {next_state, waiting_for_cluster_members, State};
 handle_info({TransOK, Socket, Members},
             waiting_for_cluster_members,
-            State=#state{socket=Socket, transport_msgs = {TransOK, _, _}}) ->
+            State=#state{socket=Socket, transport_msgs = {TransOK, _, _, _}}) ->
     Transport = State#state.transport,
     gen_fsm:send_event(self(), {all_cluster_members, binary_to_term(Members)}),
     _ = Transport:setopts(Socket, [{active, once}]),
@@ -379,7 +379,7 @@ handle_info({TransOK, Socket, Data},
             State=#state{address=Addr,
                          name=Name,
                          remote=Remote,
-                         socket=Socket, transport_msgs = {TransOK, _, _}}) ->
+                         socket=Socket, transport_msgs = {TransOK, _, _, _}}) ->
     {cluster_members_changed, Members} = binary_to_term(Data),
     ClusterUpdMsg = {cluster_updated, Name, Name, Members, Addr, Remote},
     gen_server:cast(?CLUSTER_MANAGER_SERVER, ClusterUpdMsg),
@@ -390,12 +390,12 @@ handle_info({TransError, Socket, Error},
             StateName,
             State=#state{remote=Remote,
                          socket=Socket,
-                         transport_msgs = {_, _, TransError}}) ->
+                         transport_msgs = {_, _, TransError, _}}) ->
     ?LOG_ERROR("cluster_conn: connection ~p failed in state ~s because ~p", [Remote, StateName, Error]),
     {stop, Error, State};
 handle_info({TransClosed, Socket} = Msg,
             _StateName,
-            State=#state{socket=Socket, transport_msgs = {_, TransClosed, _}}) ->
+            State=#state{socket=Socket, transport_msgs = {_, TransClosed, _, _}}) ->
     % if the connection spuriously closes, it is more likley something is
     % wrong, like the remote node has gone down, than something is normal.
     % thus, we exit abnormally and let the supervisor restart a new us.
