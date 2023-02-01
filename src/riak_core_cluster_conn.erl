@@ -390,7 +390,7 @@ handle_info({TransError, Socket, Error},
             StateName,
             State=#state{remote=Remote,
                          socket=Socket,
-                         transport_msgs = {_, _, TransError}}) ->
+                         transport_msgs = {_, _, TransError, _}}) ->
     ?LOG_ERROR("cluster_conn: connection ~p failed in state ~s because ~p", [Remote, StateName, Error]),
     {stop, Error, State};
 handle_info({TransClosed, Socket} = Msg,
