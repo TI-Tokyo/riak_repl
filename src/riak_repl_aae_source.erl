@@ -101,8 +101,7 @@ cancel_fullsync(Pid) ->
 %%%===================================================================
 
 init([Cluster, Client, Transport, Socket, Partition, OwnerPid, Proto]) ->
-    ?LOG_DEBUG("AAE fullsync source worker started for partition ~p",
-               [Partition]),
+    ?LOG_DEBUG("AAE fullsync source worker started for partition ~p", [Partition]),
 
     Ver = riak_repl_util:deduce_wire_version_from_proto(Proto),
     {_, ClientVer, _} = Proto,
@@ -288,7 +287,6 @@ update_trees(tree_built, State = #state{indexns=IndexNs}) ->
             %% Trees built now we can estimate how many keys
             {ok, EstimatedNrKeys} = riak_kv_index_hashtree:estimate_keys(State#state.tree_pid),
             ?LOG_DEBUG("EstimatedNrKeys ~p for partition ~p", [EstimatedNrKeys, State#state.index]),
-
             ?LOG_DEBUG("Moving to key exchange state"),
             key_exchange(init, State#state{built=Built, estimated_nr_keys = EstimatedNrKeys});
         _ ->
@@ -322,8 +320,7 @@ key_exchange(cancel_fullsync, State) ->
     {stop, normal, State};
 key_exchange(finish_fullsync, State=#state{owner=Owner}) ->
     send_complete(State),
-    ?LOG_DEBUG("AAE fullsync source completed partition ~p",
-                [State#state.index]),
+    ?LOG_DEBUG("AAE fullsync source completed partition ~p", [State#state.index]),
     riak_repl2_fssource:fullsync_complete(Owner),
     %% TODO: Why stay in key_exchange? Should we stop instead?
     {next_state, key_exchange, State};
@@ -399,13 +396,19 @@ key_exchange(start_key_exchange, State=#state{cluster=Cluster,
 
     %% TODO: Add stats for AAE
     ?LOG_DEBUG("Starting compare for partition ~p", [Partition]),
-    spawn_link(fun() ->
-                       StageStart=os:timestamp(),
-                       Exchange2 = riak_kv_index_hashtree:compare(IndexN, Remote, AccFun, Exchange, TreePid),
-                       ?LOG_DEBUG("Full-sync with site ~p; fullsync difference generator for ~p complete (completed in ~p secs)",
-                                   [State#state.cluster, Partition, riak_repl_util:elapsed_secs(StageStart)]),
-                       gen_fsm:send_event(SourcePid, {'$aae_src', done, Exchange2})
-               end),
+    spawn_link(
+      fun() ->
+              StageStart = os:timestamp(),
+              Exchange2 =
+                  riak_kv_index_hashtree:compare(
+                    IndexN, Remote, AccFun, Exchange, TreePid),
+              ?LOG_INFO(
+                 "Full-sync with site ~p; fullsync difference generator for ~p completion_time=~p secs",
+                 [State#state.cluster,
+                  Partition,
+                  riak_repl_util:elapsed_secs(StageStart)]),
+              gen_fsm:send_event(SourcePid, {'$aae_src', done, Exchange2})
+      end),
 
     %% wait for differences from bloom_folder or to be done
     {next_state, compute_differences, State}.

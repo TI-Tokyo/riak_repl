@@ -17,9 +17,9 @@ jobs:
       fail-fast: false
       matrix:
         otp:
-          - "24.3.4.2"
-          - "23.3.4.15"
-          - "22.3.4.26"
+          - "24"
+          - "23"
+          - "22"
 
     container:
       image: erlang:${{ matrix.otp }}
@@ -27,6 +27,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Compile
-        run: apt-get update && apt-get install -y cmake libboost-dev && ./rebar3 compile
+        run: apt-get update && apt-get install -y cmake && ./rebar3 compile
       - name: Run tests
         run: make check
