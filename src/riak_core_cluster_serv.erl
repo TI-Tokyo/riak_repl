@@ -72,14 +72,14 @@ handle_cast(_Req, State) ->
 %% handle_info
 %% ==========
 
-handle_info({TransOk, Socket, Data}, State = #state{transport_msgs = {TransOk, _, _}, socket = Socket}) when is_binary(Data) ->
+handle_info({TransOk, Socket, Data}, State = #state{transport_msgs = {TransOk, _, _, _}, socket = Socket}) when is_binary(Data) ->
     %Termed = binary_to_term(Data),
     handle_socket_info(Data, State#state.transport, State#state.socket, State);
 
-handle_info({TransClosed, Socket}, State = #state{socket = Socket, transport_msgs = {_, TransClosed, _}}) ->
+handle_info({TransClosed, Socket}, State = #state{socket = Socket, transport_msgs = {_, TransClosed, _, _}}) ->
     {stop, normal, State};
 
-handle_info({TransError, Socket, Error}, State = #state{socket = Socket, transport_msgs = {_, _, TransError}}) ->
+handle_info({TransError, Socket, Error}, State = #state{socket = Socket, transport_msgs = {_, _, TransError, _}}) ->
     {stop, {error, {connection_error, Error}}, State}.
 
 %% ==========
