@@ -27,6 +27,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Compile
-        run: apt-get update && apt-get install -y cmake && ./rebar3 compile
+        run: make
       - name: Run tests
         run: make check
